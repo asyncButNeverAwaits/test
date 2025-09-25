@@ -42,25 +42,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
-      # Cache apt packages (Xvfb)
-      - name: Cache apt packages
-        uses: actions/cache@v4
-        id: cache-apt
-        with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-xvfb
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
       # Setup Node (without reinstall if cached)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # Install dependencies only if cache miss
+      # Install npm dependencies only if cache miss
       - name: Install npm dependencies
         if: steps.cache-node.outputs.cache-hit != 'true'
         run: npm ci
@@ -70,12 +58,11 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps
 
-      # Install Xvfb only if cache miss
+      # Install Xvfb (always fresh, no cache)
       - name: Install Xvfb
-        if: steps.cache-apt.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y --no-install-recommends xvfb
 
       # Run test
       - name: Run test
