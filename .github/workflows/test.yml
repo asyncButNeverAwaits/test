@@ -1,0 +1,98 @@
+name: Test
+
+on:
+  schedule:
+    # Run at 01:00 UTC Mon–Fri (≈ 8:00 PM CT Sun–Thu, 3h after Globex open)
+    - cron: "0 1 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cache Node modules
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: cache-playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # Cache apt packages (Xvfb)
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        id: cache-apt
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-xvfb
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      # Setup Node (without reinstall if cached)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Install dependencies only if cache miss
+      - name: Install npm dependencies
+        if: steps.cache-node.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # Install Playwright browsers only if cache miss
+      - name: Install Playwright browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      # Install Xvfb only if cache miss
+      - name: Install Xvfb
+        if: steps.cache-apt.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      # Run test
+      - name: Run test
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" node test.js
+
+      # - name: Upload debug screenshot
+      #   uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: debug-screenshot
+      #     path: debug.png
+
+      # Commit & push results
+      - name: Push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Add data for $(date -u +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
