@@ -56,7 +56,9 @@ const { execSync } = require("child_process");
 
   // 📂 Create dated folder and save file
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const dirPath = `${today}`;
+  const [year, month, day] = today.split("-");          // ["2025", "09", "25"]
+
+  const dirPath = `${year}/${month}/${day}`;
   const filePath = `${dirPath}/data.json`;
 
   fs.mkdirSync(dirPath, { recursive: true });
