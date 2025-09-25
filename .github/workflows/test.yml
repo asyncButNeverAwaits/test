@@ -42,7 +42,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
-      # Setup Node (without reinstall if cached)
+      # Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -53,16 +53,16 @@ jobs:
         if: steps.cache-node.outputs.cache-hit != 'true'
         run: npm ci
 
+      # Install Xvfb and Playwright deps in one apt-get call
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb
+
       # Install Playwright browsers only if cache miss
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps
-
-      # Install Xvfb (always fresh, no cache)
-      - name: Install Xvfb
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb
 
       # Run test
       - name: Run test
