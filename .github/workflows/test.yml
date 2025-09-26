@@ -3,7 +3,8 @@ name: Test
 on:
   schedule:
     # Run at 01:00 UTC Mon–Fri (≈ 8:00 PM CT Sun–Thu, 3h after Globex open)
-    - cron: "0 1 * * 1-5"
+    # - cron: "0 1 * * 1-5"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
