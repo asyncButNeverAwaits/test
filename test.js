@@ -31,7 +31,7 @@ const { execSync } = require("child_process");
   for (let i = 0; i < rows.length; i++) {
     try {
       const monthEl = await rows[i].$("td:first-child");
-      const openingEl = await rows[i].$("td:nth-child(8) > div");
+      const openingEl = await rows[i].$("td:nth-child(7) > div");
 
       if (!monthEl || !openingEl) {
         console.warn(`⚠️ Missing elements in row ${i}`);
